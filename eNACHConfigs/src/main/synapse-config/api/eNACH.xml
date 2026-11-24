@@ -1,0 +1,810 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<api context="/enach" name="eNACH" xmlns="http://ws.apache.org/ns/synapse">
+    <resource methods="POST" url-mapping="/initPay">
+        <inSequence>
+            <property expression="json-eval($)" name="REQUEST_JSON" scope="default" type="STRING"/>
+            <property expression="json-eval($.merchantId)" name="merchantId" scope="default" type="STRING"/>
+            <class name="com.cholams.free.EnachURLEncoded"/>
+            <property expression="get-property('REQUEST_JSON')" name="encode" scope="default" type="STRING"/>
+            <log level="custom">
+                <property expression="get-property('encode')" name="encodedValue>>>>"/>
+            </log>
+            <payloadFactory media-type="json">
+                <format>
+             $1
+</format>
+                <args>
+                    <arg evaluator="xml" expression="get-property('encode')"/>
+                </args>
+            </payloadFactory>
+            <property expression="json-eval($)" name="requestbody" scope="default" type="STRING"/>
+            <property expression="get-property('registry','conf:/config.xml')" name="freechargeurl" scope="default" type="OM"/>
+            <property expression="$ctx:freechargeurl//eNACH_initPay" name="uri.var.eNACH_initPay" scope="default" type="STRING"/>
+            <property expression="concat(get-property('merchantId'),'_key')" name="merchantKeyNode" scope="default" type="STRING"/>
+            <property expression="$ctx:freechargeurl/*[local-name()=get-property('merchantKeyNode')]/text()" name="merchantkey" scope="default" type="STRING"/>
+            <log level="custom">
+                <property expression="get-property('merchantkey')" name="merchantkey"/>
+                <property expression="get-property('requestbody')" name="requestbody"/>
+            </log>
+            <class name="com.cholams.free.checkoutwithouttimestamp"/>
+            <property expression="get-property('signature')" name="signature" scope="default" type="STRING"/>
+            <!--  <property expression="get-property('tmpstmp')" name="timestamp" scope="default" type="STRING"/>-->
+            <log level="custom">
+                <property expression="get-property('signature')" name="signature>>>"/>
+            </log>
+            <script language="js"><![CDATA[var payload = mc.getPayloadJSON();
+    payload.signature = mc.getProperty("signature");
+    mc.setPayloadJSON(payload);]]></script>
+            <log level="custom">
+                <property expression="json-eval($)" name="requestbody"/>
+            </log>
+            <property expression="json-eval($)" name="requestbody" scope="default" type="STRING"/>
+            <log level="custom">
+                <property expression="get-property('requestbody')" name="PayloadBeforeEncryption"/>
+            </log>
+            <class name="com.cholams.pg.freecharge.util.FreechargeEncryptionUtil"/>
+            <log level="custom">
+                <property expression="get-property('encData')" name="Encrypted Payload"/>
+            </log>
+            <payloadFactory media-type="json">
+                <format> { "clientId":"$1", "encData":"$2" } </format>
+                <args>
+                    <arg evaluator="xml" expression="get-property('merchantId')"/>
+                    <arg evaluator="xml" expression="get-property('encData')"/>
+                </args>
+            </payloadFactory>
+            <log level="custom">
+                <property expression="json-eval($)" name="PAYLOAD_AFTER_ENCRYPTION"/>
+            </log>
+            <call>
+                <endpoint>
+                    <http method="post" uri-template="{uri.var.eNACH_initPay}">
+                        <timeout>
+                            <duration>90000</duration>
+                            <responseAction>fault</responseAction>
+                        </timeout>
+                        <suspendOnFailure>
+                            <initialDuration>-1</initialDuration>
+                            <progressionFactor>-1</progressionFactor>
+                            <maximumDuration>0</maximumDuration>
+                        </suspendOnFailure>
+                        <markForSuspension>
+                            <retriesBeforeSuspension>0</retriesBeforeSuspension>
+                        </markForSuspension>
+                    </http>
+                </endpoint>
+            </call>
+            <log level="custom">
+                <property expression="json-eval($)" name="RESPONSE_PAYLOAD"/>
+            </log>
+            <property expression="json-eval($.clientId)" name="clientId" scope="default" type="STRING"/>
+            <property expression="json-eval($.encData)" name="encData" scope="default" type="STRING"/>
+            <log level="custom">
+                <property expression="get-property('clientId')" name="RESPONSE_CLIENT_ID"/>
+                <property expression="get-property('encData')" name="ENCRYPTED_RESPONSE"/>
+            </log>
+            <class name="com.cholams.pg.freecharge.util.FreechargeDecryptionUtil"/>
+            <property expression="get-property('decData')" name="decrypt_response" scope="default" type="STRING"/>
+            <log level="custom">
+                <property expression="get-property('decrypt_response')" name="PAYLOAD_AFTER_DECRYPTION"/>
+            </log>
+            <payloadFactory media-type="json">
+                <format>$1</format>
+                <args>
+                    <arg evaluator="xml" expression="get-property('decrypt_response')"/>
+                </args>
+            </payloadFactory>
+            <respond/>
+        </inSequence>
+        <outSequence/>
+        <faultSequence/>
+    </resource>
+    <resource methods="POST" url-mapping="/authorizePay">
+        <inSequence>
+            <property expression="json-eval($)" name="REQUEST_JSON" scope="default" type="STRING"/>
+            <property expression="json-eval($.merchantId)" name="merchantId" scope="default" type="STRING"/>
+            <class name="com.cholams.free.EnachURLEncoded"/>
+            <property expression="get-property('REQUEST_JSON')" name="encode" scope="default" type="STRING"/>
+            <log level="custom">
+                <property expression="get-property('encode')" name="encodedValue>>>>"/>
+            </log>
+            <payloadFactory media-type="json">
+                <format>
+             $1
+</format>
+                <args>
+                    <arg evaluator="xml" expression="get-property('encode')"/>
+                </args>
+            </payloadFactory>
+            <property expression="json-eval($)" name="requestbody" scope="default" type="STRING"/>
+            <property expression="get-property('registry','conf:/config.xml')" name="freechargeurl" scope="default" type="OM"/>
+            <property expression="$ctx:freechargeurl//eNACH_authorizePay" name="uri.var.eNACH_authorizePay" scope="default" type="STRING"/>
+            <property expression="concat(get-property('merchantId'),'_key')" name="merchantKeyNode" scope="default" type="STRING"/>
+            <property expression="$ctx:freechargeurl/*[local-name()=get-property('merchantKeyNode')]/text()" name="merchantkey" scope="default" type="STRING"/>
+            <log level="custom">
+                <property expression="get-property('merchantkey')" name="merchantkey"/>
+                <property expression="get-property('requestbody')" name="requestbody"/>
+            </log>
+            <class name="com.cholams.free.checkoutwithouttimestamp"/>
+            <property expression="get-property('signature')" name="signature" scope="default" type="STRING"/>
+            <!--  <property expression="get-property('tmpstmp')" name="timestamp" scope="default" type="STRING"/>-->
+            <log level="custom">
+                <property expression="get-property('signature')" name="signature>>>"/>
+            </log>
+            <script language="js"><![CDATA[var payload = mc.getPayloadJSON();
+    payload.signature = mc.getProperty("signature");
+    mc.setPayloadJSON(payload);]]></script>
+            <log level="custom">
+                <property expression="json-eval($)" name="requestbody"/>
+            </log>
+            <property expression="json-eval($)" name="requestbody" scope="default" type="STRING"/>
+            <log level="custom">
+                <property expression="get-property('requestbody')" name="PayloadBeforeEncryption"/>
+            </log>
+            <!--  Encryption Mediator  -->
+            <class name="com.cholams.pg.freecharge.util.FreechargeEncryptionUtil"/>
+            <log level="custom">
+                <property expression="get-property('encData')" name="Encrypted Payload"/>
+            </log>
+            <!--  Create encrypted request  -->
+            <payloadFactory media-type="json">
+                <format> { "clientId":"$1", "encData":"$2" } </format>
+                <args>
+                    <arg evaluator="xml" expression="get-property('merchantId')"/>
+                    <arg evaluator="xml" expression="get-property('encData')"/>
+                </args>
+            </payloadFactory>
+            <log level="custom">
+                <property expression="json-eval($)" name="PAYLOAD_AFTER_ENCRYPTION"/>
+            </log>
+            <call>
+                <endpoint>
+                    <http method="post" uri-template="{uri.var.eNACH_authorizePay}">
+                        <timeout>
+                            <duration>90000</duration>
+                            <responseAction>fault</responseAction>
+                        </timeout>
+                        <suspendOnFailure>
+                            <initialDuration>-1</initialDuration>
+                            <progressionFactor>-1</progressionFactor>
+                            <maximumDuration>0</maximumDuration>
+                        </suspendOnFailure>
+                        <markForSuspension>
+                            <retriesBeforeSuspension>0</retriesBeforeSuspension>
+                        </markForSuspension>
+                    </http>
+                </endpoint>
+            </call>
+            <property expression="json-eval($.clientId)" name="clientId" scope="default" type="STRING"/>
+            <property expression="json-eval($.encData)" name="encData" scope="default" type="STRING"/>
+            <log level="custom">
+                <property expression="get-property('clientId')" name="RESPONSE_CLIENT_ID"/>
+                <property expression="get-property('encData')" name="ENCRYPTED_RESPONSE"/>
+            </log>
+            <!-- Existing decryption Java class -->
+            <class name="com.cholams.pg.freecharge.util.FreechargeDecryptionUtil"/>
+            <property expression="get-property('decData')" name="decrypt_response" scope="default" type="STRING"/>
+            <log level="custom">
+                <property expression="get-property('decrypt_response')" name="PAYLOAD_AFTER_DECRYPTION"/>
+            </log>
+            <!-- Return decrypted response -->
+            <payloadFactory media-type="json">
+                <format>$1</format>
+                <args>
+                    <arg evaluator="xml" expression="get-property('decrypt_response')"/>
+                </args>
+            </payloadFactory>
+            <respond/>
+        </inSequence>
+        <outSequence/>
+        <faultSequence/>
+    </resource>
+    <resource methods="POST" url-mapping="/mandate/execute">
+        <inSequence>
+            <property expression="json-eval($)" name="REQUEST_JSON" scope="default" type="STRING"/>
+            <property expression="json-eval($.entityId)" name="merchantId" scope="default" type="STRING"/>
+            <class name="com.cholams.free.EnachURLEncoded"/>
+            <property expression="get-property('REQUEST_JSON')" name="encode" scope="default" type="STRING"/>
+            <log level="custom">
+                <property expression="get-property('encode')" name="encodedValue>>>>"/>
+            </log>
+            <payloadFactory media-type="json">
+                <format>
+             $1
+</format>
+                <args>
+                    <arg evaluator="xml" expression="get-property('encode')"/>
+                </args>
+            </payloadFactory>
+            <property expression="json-eval($)" name="requestbody" scope="default" type="STRING"/>
+            <property expression="get-property('registry','conf:/config.xml')" name="freechargeurl" scope="default" type="OM"/>
+            <property expression="$ctx:freechargeurl//eNACH_mandate_execute" name="uri.var.eNACH_mandate_execute" scope="default" type="STRING"/>
+            <property expression="concat(get-property('merchantId'),'_key')" name="merchantKeyNode" scope="default" type="STRING"/>
+            <property expression="$ctx:freechargeurl/*[local-name()=get-property('merchantKeyNode')]/text()" name="merchantkey" scope="default" type="STRING"/>
+            <log level="custom">
+                <property expression="get-property('merchantkey')" name="merchantkey"/>
+                <property expression="get-property('requestbody')" name="requestbody"/>
+            </log>
+            <class name="com.cholams.free.checkoutwithouttimestamp"/>
+            <property expression="get-property('signature')" name="signature" scope="default" type="STRING"/>
+            <!--  <property expression="get-property('tmpstmp')" name="timestamp" scope="default" type="STRING"/>-->
+            <log level="custom">
+                <property expression="get-property('signature')" name="signature>>>"/>
+            </log>
+            <script language="js"><![CDATA[var payload = mc.getPayloadJSON();
+    payload.signature = mc.getProperty("signature");
+    mc.setPayloadJSON(payload);]]></script>
+            <log level="custom">
+                <property expression="json-eval($)" name="requestbody"/>
+            </log>
+            <property expression="json-eval($)" name="requestbody" scope="default" type="STRING"/>
+            <log level="custom">
+                <property expression="get-property('requestbody')" name="PayloadBeforeEncryption"/>
+            </log>
+            <!--  Encryption Mediator  -->
+            <class name="com.cholams.pg.freecharge.util.FreechargeEncryptionUtil"/>
+            <log level="custom">
+                <property expression="get-property('encData')" name="Encrypted Payload"/>
+            </log>
+            <!--  Create encrypted request  -->
+            <payloadFactory media-type="json">
+                <format> { "clientId":"$1", "encData":"$2" } </format>
+                <args>
+                    <arg evaluator="xml" expression="get-property('merchantId')"/>
+                    <arg evaluator="xml" expression="get-property('encData')"/>
+                </args>
+            </payloadFactory>
+            <log level="custom">
+                <property expression="json-eval($)" name="PAYLOAD_AFTER_ENCRYPTION"/>
+            </log>
+            <call>
+                <endpoint>
+                    <http method="post" uri-template="{uri.var.eNACH_mandate_execute}">
+                        <timeout>
+                            <duration>90000</duration>
+                            <responseAction>fault</responseAction>
+                        </timeout>
+                        <suspendOnFailure>
+                            <initialDuration>-1</initialDuration>
+                            <progressionFactor>-1</progressionFactor>
+                            <maximumDuration>0</maximumDuration>
+                        </suspendOnFailure>
+                        <markForSuspension>
+                            <retriesBeforeSuspension>0</retriesBeforeSuspension>
+                        </markForSuspension>
+                    </http>
+                </endpoint>
+            </call>
+            <property expression="json-eval($.clientId)" name="clientId" scope="default" type="STRING"/>
+            <property expression="json-eval($.encData)" name="encData" scope="default" type="STRING"/>
+            <log level="custom">
+                <property expression="get-property('clientId')" name="RESPONSE_CLIENT_ID"/>
+                <property expression="get-property('encData')" name="ENCRYPTED_RESPONSE"/>
+            </log>
+            <class name="com.cholams.pg.freecharge.util.FreechargeDecryptionUtil"/>
+            <property expression="get-property('decData')" name="decrypt_response" scope="default" type="STRING"/>
+            <log level="custom">
+                <property expression="get-property('decrypt_response')" name="PAYLOAD_AFTER_DECRYPTION"/>
+            </log>
+            <payloadFactory media-type="json">
+                <format>$1</format>
+                <args>
+                    <arg evaluator="xml" expression="get-property('decrypt_response')"/>
+                </args>
+            </payloadFactory>
+            <respond/>
+        </inSequence>
+        <outSequence/>
+        <faultSequence/>
+    </resource>
+    <resource methods="POST" url-mapping="/mandate/status">
+        <inSequence>
+            <property expression="json-eval($)" name="REQUEST_JSON" scope="default" type="STRING"/>
+            <property expression="json-eval($.merchantId)" name="merchantId" scope="default" type="STRING"/>
+            <class name="com.cholams.free.EnachURLEncoded"/>
+            <property expression="get-property('REQUEST_JSON')" name="encode" scope="default" type="STRING"/>
+            <log level="custom">
+                <property expression="get-property('encode')" name="encodedValue>>>>"/>
+            </log>
+            <payloadFactory media-type="json">
+                <format>
+             $1
+</format>
+                <args>
+                    <arg evaluator="xml" expression="get-property('encode')"/>
+                </args>
+            </payloadFactory>
+            <property expression="json-eval($)" name="requestbody" scope="default" type="STRING"/>
+            <property expression="get-property('registry','conf:/config.xml')" name="freechargeurl" scope="default" type="OM"/>
+            <property expression="$ctx:freechargeurl//eNACH_mandate_status" name="uri.var.eNACH_mandate_status" scope="default" type="STRING"/>
+            <property expression="concat(get-property('merchantId'),'_key')" name="merchantKeyNode" scope="default" type="STRING"/>
+            <property expression="$ctx:freechargeurl/*[local-name()=get-property('merchantKeyNode')]/text()" name="merchantkey" scope="default" type="STRING"/>
+            <log level="custom">
+                <property expression="get-property('merchantkey')" name="merchantkey"/>
+                <property expression="get-property('requestbody')" name="requestbody"/>
+            </log>
+            <class name="com.cholams.free.checkoutwithouttimestamp"/>
+            <property expression="get-property('signature')" name="signature" scope="default" type="STRING"/>
+            <!--  <property expression="get-property('tmpstmp')" name="timestamp" scope="default" type="STRING"/>-->
+            <log level="custom">
+                <property expression="get-property('signature')" name="signature>>>"/>
+            </log>
+            <script language="js"><![CDATA[var payload = mc.getPayloadJSON();
+    payload.signature = mc.getProperty("signature");
+    mc.setPayloadJSON(payload);]]></script>
+            <log level="custom">
+                <property expression="json-eval($)" name="requestbody"/>
+            </log>
+            <property expression="json-eval($)" name="requestbody" scope="default" type="STRING"/>
+            <log level="custom">
+                <property expression="get-property('requestbody')" name="PayloadBeforeEncryption"/>
+            </log>
+            <!--  Encryption Mediator  -->
+            <class name="com.cholams.pg.freecharge.util.FreechargeEncryptionUtil"/>
+            <log level="custom">
+                <property expression="get-property('encData')" name="Encrypted Payload"/>
+            </log>
+            <!--  Create encrypted request  -->
+            <payloadFactory media-type="json">
+                <format> { "clientId":"$1", "encData":"$2" } </format>
+                <args>
+                    <arg evaluator="xml" expression="get-property('merchantId')"/>
+                    <arg evaluator="xml" expression="get-property('encData')"/>
+                </args>
+            </payloadFactory>
+            <log level="custom">
+                <property expression="json-eval($)" name="PAYLOAD_AFTER_ENCRYPTION"/>
+            </log>
+            <call>
+                <endpoint>
+                    <http method="post" uri-template="{uri.var.eNACH_mandate_status}">
+                        <timeout>
+                            <duration>90000</duration>
+                            <responseAction>fault</responseAction>
+                        </timeout>
+                        <suspendOnFailure>
+                            <initialDuration>-1</initialDuration>
+                            <progressionFactor>-1</progressionFactor>
+                            <maximumDuration>0</maximumDuration>
+                        </suspendOnFailure>
+                        <markForSuspension>
+                            <retriesBeforeSuspension>0</retriesBeforeSuspension>
+                        </markForSuspension>
+                    </http>
+                </endpoint>
+            </call>
+            <property expression="json-eval($.clientId)" name="clientId" scope="default" type="STRING"/>
+            <property expression="json-eval($.encData)" name="encData" scope="default" type="STRING"/>
+            <log level="custom">
+                <property expression="get-property('clientId')" name="RESPONSE_CLIENT_ID"/>
+                <property expression="get-property('encData')" name="ENCRYPTED_RESPONSE"/>
+            </log>
+            <!-- Existing decryption Java class -->
+            <class name="com.cholams.pg.freecharge.util.FreechargeDecryptionUtil"/>
+            <property expression="get-property('decData')" name="decrypt_response" scope="default" type="STRING"/>
+            <log level="custom">
+                <property expression="get-property('decrypt_response')" name="PAYLOAD_AFTER_DECRYPTION"/>
+            </log>
+            <!-- Return decrypted response -->
+            <payloadFactory media-type="json">
+                <format>$1</format>
+                <args>
+                    <arg evaluator="xml" expression="get-property('decrypt_response')"/>
+                </args>
+            </payloadFactory>
+            <respond/>
+        </inSequence>
+        <outSequence/>
+        <faultSequence/>
+    </resource>
+    <resource methods="POST" url-mapping="/mandate/revoke">
+        <inSequence>
+            <property expression="json-eval($)" name="REQUEST_JSON" scope="default" type="STRING"/>
+            <property expression="json-eval($.merchantId)" name="merchantId" scope="default" type="STRING"/>
+            <class name="com.cholams.free.EnachURLEncoded"/>
+            <property expression="get-property('REQUEST_JSON')" name="encode" scope="default" type="STRING"/>
+            <log level="custom">
+                <property expression="get-property('encode')" name="encodedValue>>>>"/>
+            </log>
+            <payloadFactory media-type="json">
+                <format>
+             $1
+</format>
+                <args>
+                    <arg evaluator="xml" expression="get-property('encode')"/>
+                </args>
+            </payloadFactory>
+            <property expression="json-eval($)" name="requestbody" scope="default" type="STRING"/>
+            <property expression="get-property('registry','conf:/config.xml')" name="freechargeurl" scope="default" type="OM"/>
+            <property expression="$ctx:freechargeurl//eNACH_mandate_revoke" name="uri.var.eNACH_mandate_revoke" scope="default" type="STRING"/>
+            <property expression="concat(get-property('merchantId'),'_key')" name="merchantKeyNode" scope="default" type="STRING"/>
+            <property expression="$ctx:freechargeurl/*[local-name()=get-property('merchantKeyNode')]/text()" name="merchantkey" scope="default" type="STRING"/>
+            <log level="custom">
+                <property expression="get-property('merchantkey')" name="merchantkey"/>
+                <property expression="get-property('requestbody')" name="requestbody"/>
+            </log>
+            <class name="com.cholams.free.checkoutwithouttimestamp"/>
+            <property expression="get-property('signature')" name="signature" scope="default" type="STRING"/>
+            <!--  <property expression="get-property('tmpstmp')" name="timestamp" scope="default" type="STRING"/>-->
+            <log level="custom">
+                <property expression="get-property('signature')" name="signature>>>"/>
+            </log>
+            <script language="js"><![CDATA[var payload = mc.getPayloadJSON();
+    payload.signature = mc.getProperty("signature");
+    mc.setPayloadJSON(payload);]]></script>
+            <log level="custom">
+                <property expression="json-eval($)" name="requestbody"/>
+            </log>
+            <property expression="json-eval($)" name="requestbody" scope="default" type="STRING"/>
+            <log level="custom">
+                <property expression="get-property('requestbody')" name="PayloadBeforeEncryption"/>
+            </log>
+            <!--  Encryption Mediator  -->
+            <class name="com.cholams.pg.freecharge.util.FreechargeEncryptionUtil"/>
+            <log level="custom">
+                <property expression="get-property('encData')" name="Encrypted Payload"/>
+            </log>
+            <!--  Create encrypted request  -->
+            <payloadFactory media-type="json">
+                <format> { "clientId":"$1", "encData":"$2" } </format>
+                <args>
+                    <arg evaluator="xml" expression="get-property('merchantId')"/>
+                    <arg evaluator="xml" expression="get-property('encData')"/>
+                </args>
+            </payloadFactory>
+            <log level="custom">
+                <property expression="json-eval($)" name="PAYLOAD_AFTER_ENCRYPTION"/>
+            </log>
+            <call>
+                <endpoint>
+                    <http method="post" uri-template="{uri.var.eNACH_mandate_revoke}">
+                        <timeout>
+                            <duration>90000</duration>
+                            <responseAction>fault</responseAction>
+                        </timeout>
+                        <suspendOnFailure>
+                            <initialDuration>-1</initialDuration>
+                            <progressionFactor>-1</progressionFactor>
+                            <maximumDuration>0</maximumDuration>
+                        </suspendOnFailure>
+                        <markForSuspension>
+                            <retriesBeforeSuspension>0</retriesBeforeSuspension>
+                        </markForSuspension>
+                    </http>
+                </endpoint>
+            </call>
+            <property expression="json-eval($.clientId)" name="clientId" scope="default" type="STRING"/>
+            <property expression="json-eval($.encData)" name="encData" scope="default" type="STRING"/>
+            <log level="custom">
+                <property expression="get-property('clientId')" name="RESPONSE_CLIENT_ID"/>
+                <property expression="get-property('encData')" name="ENCRYPTED_RESPONSE"/>
+            </log>
+            <!-- Existing decryption Java class -->
+            <class name="com.cholams.pg.freecharge.util.FreechargeDecryptionUtil"/>
+            <property expression="get-property('decData')" name="decrypt_response" scope="default" type="STRING"/>
+            <log level="custom">
+                <property expression="get-property('decrypt_response')" name="PAYLOAD_AFTER_DECRYPTION"/>
+            </log>
+            <!-- Return decrypted response -->
+            <payloadFactory media-type="json">
+                <format>$1</format>
+                <args>
+                    <arg evaluator="xml" expression="get-property('decrypt_response')"/>
+                </args>
+            </payloadFactory>
+            <respond/>
+        </inSequence>
+        <outSequence/>
+        <faultSequence/>
+    </resource>
+    <resource methods="POST" url-mapping="/mandate/detail">
+        <inSequence>
+            <property expression="json-eval($)" name="requestbody" scope="default" type="STRING"/>
+            <property expression="json-eval($.merchantId)" name="merchantId" scope="default" type="STRING"/>
+            <property expression="get-property('registry','conf:/config.xml')" name="freechargeurl" scope="default" type="OM"/>
+            <property expression="$ctx:freechargeurl//eNACH_mandate_detail" name="uri.var.eNACH_mandate_detail" scope="default" type="STRING"/>
+            <property expression="concat(get-property('merchantId'),'_key')" name="merchantKeyNode" scope="default" type="STRING"/>
+            <property expression="$ctx:freechargeurl/*[local-name()=get-property('merchantKeyNode')]/text()" name="merchantkey" scope="default" type="STRING"/>
+            <log level="custom">
+                <property expression="get-property('merchantkey')" name="merchantkey"/>
+                <property expression="get-property('requestbody')" name="requestbody"/>
+            </log>
+            <class name="com.cholams.free.checkoutwithouttimestamp"/>
+            <property expression="get-property('signature')" name="signature" scope="default" type="STRING"/>
+            <!--  <property expression="get-property('tmpstmp')" name="timestamp" scope="default" type="STRING"/>-->
+            <log level="custom">
+                <property expression="get-property('signature')" name="signature>>>"/>
+            </log>
+            <script language="js"><![CDATA[var payload = mc.getPayloadJSON();
+    payload.signature = mc.getProperty("signature");
+    mc.setPayloadJSON(payload);]]></script>
+            <log level="custom">
+                <property expression="json-eval($)" name="requestbody"/>
+            </log>
+            <property expression="json-eval($)" name="requestbody" scope="default" type="STRING"/>
+            <log level="custom">
+                <property expression="get-property('requestbody')" name="PayloadBeforeEncryption"/>
+            </log>
+            <class name="com.cholams.pg.freecharge.util.FreechargeEncryptionUtil"/>
+            <log level="custom">
+                <property expression="get-property('encData')" name="Encrypted Payload"/>
+            </log>
+            <payloadFactory media-type="json">
+                <format> { "clientId":"$1", "encData":"$2" } </format>
+                <args>
+                    <arg evaluator="xml" expression="get-property('merchantId')"/>
+                    <arg evaluator="xml" expression="get-property('encData')"/>
+                </args>
+            </payloadFactory>
+            <log level="custom">
+                <property expression="json-eval($)" name="PAYLOAD_AFTER_ENCRYPTION"/>
+            </log>
+            <call>
+                <endpoint>
+                    <http method="post" uri-template="{uri.var.eNACH_mandate_detail}">
+                        <timeout>
+                            <duration>90000</duration>
+                            <responseAction>fault</responseAction>
+                        </timeout>
+                        <suspendOnFailure>
+                            <initialDuration>-1</initialDuration>
+                            <progressionFactor>-1</progressionFactor>
+                            <maximumDuration>0</maximumDuration>
+                        </suspendOnFailure>
+                        <markForSuspension>
+                            <retriesBeforeSuspension>0</retriesBeforeSuspension>
+                        </markForSuspension>
+                    </http>
+                </endpoint>
+            </call>
+            <property expression="json-eval($.clientId)" name="clientId" scope="default" type="STRING"/>
+            <property expression="json-eval($.encData)" name="encData" scope="default" type="STRING"/>
+            <log level="custom">
+                <property expression="get-property('clientId')" name="RESPONSE_CLIENT_ID"/>
+                <property expression="get-property('encData')" name="ENCRYPTED_RESPONSE"/>
+            </log>
+            <class name="com.cholams.pg.freecharge.util.FreechargeDecryptionUtil"/>
+            <property expression="get-property('decData')" name="decrypt_response" scope="default" type="STRING"/>
+            <log level="custom">
+                <property expression="get-property('decrypt_response')" name="PAYLOAD_AFTER_DECRYPTION"/>
+            </log>
+            <payloadFactory media-type="json">
+                <format>$1</format>
+                <args>
+                    <arg evaluator="xml" expression="get-property('decrypt_response')"/>
+                </args>
+            </payloadFactory>
+            <respond/>
+        </inSequence>
+        <outSequence/>
+        <faultSequence/>
+    </resource>
+    <resource methods="POST" url-mapping="/mandate/detail/list">
+        <inSequence>
+            <property expression="json-eval($)" name="requestbody" scope="default" type="STRING"/>
+            <property expression="json-eval($.merchantId)" name="merchantId" scope="default" type="STRING"/>
+            <property expression="get-property('registry','conf:/config.xml')" name="freechargeurl" scope="default" type="OM"/>
+            <property expression="$ctx:freechargeurl//eNACH_mandate_detail_list" name="uri.var.eNACH_mandate_detail_list" scope="default" type="STRING"/>
+            <property expression="concat(get-property('merchantId'),'_key')" name="merchantKeyNode" scope="default" type="STRING"/>
+            <property expression="$ctx:freechargeurl/*[local-name()=get-property('merchantKeyNode')]/text()" name="merchantkey" scope="default" type="STRING"/>
+            <log level="custom">
+                <property expression="get-property('merchantkey')" name="merchantkey"/>
+                <property expression="get-property('requestbody')" name="requestbody"/>
+            </log>
+            <class name="com.cholams.free.checkoutwithouttimestamp"/>
+            <property expression="get-property('signature')" name="signature" scope="default" type="STRING"/>
+            <!--  <property expression="get-property('tmpstmp')" name="timestamp" scope="default" type="STRING"/>-->
+            <log level="custom">
+                <property expression="get-property('signature')" name="signature>>>"/>
+            </log>
+            <script language="js"><![CDATA[var payload = mc.getPayloadJSON();
+    payload.signature = mc.getProperty("signature");
+    mc.setPayloadJSON(payload);]]></script>
+            <log level="custom">
+                <property expression="json-eval($)" name="requestbody"/>
+            </log>
+            <property expression="json-eval($)" name="requestbody" scope="default" type="STRING"/>
+            <log level="custom">
+                <property expression="get-property('requestbody')" name="PayloadBeforeEncryption"/>
+            </log>
+            <!--  Encryption Mediator  -->
+            <class name="com.cholams.pg.freecharge.util.FreechargeEncryptionUtil"/>
+            <log level="custom">
+                <property expression="get-property('encData')" name="Encrypted Payload"/>
+            </log>
+            <!--  Create encrypted request  -->
+            <payloadFactory media-type="json">
+                <format> { "clientId":"$1", "encData":"$2" } </format>
+                <args>
+                    <arg evaluator="xml" expression="get-property('merchantId')"/>
+                    <arg evaluator="xml" expression="get-property('encData')"/>
+                </args>
+            </payloadFactory>
+            <log level="custom">
+                <property expression="json-eval($)" name="PAYLOAD_AFTER_ENCRYPTION"/>
+            </log>
+            <call>
+                <endpoint>
+                    <http method="post" uri-template="{uri.var.eNACH_mandate_detail_list}">
+                        <timeout>
+                            <duration>90000</duration>
+                            <responseAction>fault</responseAction>
+                        </timeout>
+                        <suspendOnFailure>
+                            <initialDuration>-1</initialDuration>
+                            <progressionFactor>-1</progressionFactor>
+                            <maximumDuration>0</maximumDuration>
+                        </suspendOnFailure>
+                        <markForSuspension>
+                            <retriesBeforeSuspension>0</retriesBeforeSuspension>
+                        </markForSuspension>
+                    </http>
+                </endpoint>
+            </call>
+            <property expression="json-eval($.clientId)" name="clientId" scope="default" type="STRING"/>
+            <property expression="json-eval($.encData)" name="encData" scope="default" type="STRING"/>
+            <log level="custom">
+                <property expression="get-property('clientId')" name="RESPONSE_CLIENT_ID"/>
+                <property expression="get-property('encData')" name="ENCRYPTED_RESPONSE"/>
+            </log>
+            <class name="com.cholams.pg.freecharge.util.FreechargeDecryptionUtil"/>
+            <property expression="get-property('decData')" name="decrypt_response" scope="default" type="STRING"/>
+            <log level="custom">
+                <property expression="get-property('decrypt_response')" name="PAYLOAD_AFTER_DECRYPTION"/>
+            </log>
+            <payloadFactory media-type="json">
+                <format>$1</format>
+                <args>
+                    <arg evaluator="xml" expression="get-property('decrypt_response')"/>
+                </args>
+            </payloadFactory>
+            <respond/>
+        </inSequence>
+        <outSequence/>
+        <faultSequence/>
+    </resource>
+    <resource methods="POST" url-mapping="/generic/encryption">
+        <inSequence>
+            <!-- Log Incoming Request -->
+            <log level="full">
+                <property name="STEP" value="Incoming Request"/>
+            </log>
+            <!-- Store complete JSON payload -->
+            <property expression="json-eval($)" name="REQUEST_JSON" scope="default" type="STRING"/>
+            <property expression="json-eval($.merchantId)" name="merchantId" scope="default" type="STRING"/>
+            <log level="custom">
+                <property expression="get-property('REQUEST_JSON')" name="REQUEST_JSON"/>
+            </log>
+            <!-- Merchant Key -->
+            <property expression="get-property('registry','conf:/config.xml')" name="freechargeurl" scope="default" type="OM"/>
+            <property expression="concat(get-property('merchantId'),'_key')" name="merchantKeyNode" scope="default" type="STRING"/>
+            <property expression="$ctx:freechargeurl/*[local-name()=get-property('merchantKeyNode')]/text()" name="merchantkey" scope="default" type="STRING"/>
+            <!-- Request body for signature generation -->
+            <property expression="get-property('REQUEST_JSON')" name="requestbody" scope="default" type="STRING"/>
+            <!-- Generate Signature -->
+            <class name="com.cholams.free.checkoutwithouttimestamp"/>
+            <log level="custom">
+                <property expression="get-property('signature')" name="GeneratedSignature"/>
+            </log>
+            <!-- Add signature to existing payload -->
+            <script language="js"><![CDATA[var payload = mc.getPayloadJSON();
+                payload.signature = mc.getProperty("signature");
+                mc.setPayloadJSON(payload);]]></script>
+            <!-- Updated payload -->
+            <property expression="json-eval($)" name="requestbody" scope="default" type="STRING"/>
+            <log level="custom">
+                <property expression="get-property('requestbody')" name="PAYLOAD_WITH_SIGNATURE"/>
+            </log>
+            <!-- Encrypt updated payload -->
+            <class name="com.cholams.pg.freecharge.util.FreechargeEncryptionUtil"/>
+            <log level="custom">
+                <property expression="get-property('encData')" name="EncryptedData"/>
+            </log>
+            <!-- Read merchantId dynamically from request -->
+            <property expression="json-eval($.merchantId)" name="clientId" scope="default" type="STRING"/>
+            <!-- Final Response -->
+            <payloadFactory media-type="json">
+                <format>
+                {
+                    "clientId":"$1",
+                    "encData":"$2"
+                }
+                </format>
+                <args>
+                    <arg evaluator="xml" expression="get-property('clientId')"/>
+                    <arg evaluator="xml" expression="get-property('encData')"/>
+                </args>
+            </payloadFactory>
+            <respond/>
+        </inSequence>
+        <outSequence/>
+        <faultSequence>
+            <log level="full">
+                <property expression="get-property('ERROR_CODE')" name="ERROR_CODE"/>
+                <property expression="get-property('ERROR_MESSAGE')" name="ERROR_MESSAGE"/>
+                <property expression="get-property('ERROR_DETAIL')" name="ERROR_DETAIL"/>
+            </log>
+            <payloadFactory media-type="json">
+                <format>
+                {
+                    "status":"FAILED",
+                    "message":"$1"
+                }
+                </format>
+                <args>
+                    <arg evaluator="xml" expression="get-property('ERROR_MESSAGE')"/>
+                </args>
+            </payloadFactory>
+            <respond/>
+        </faultSequence>
+    </resource>
+    <resource methods="POST" url-mapping="/generic/decryption">
+        <inSequence>
+            <property expression="json-eval($.clientId)" name="merchantId" scope="default" type="STRING"/>
+            <property expression="json-eval($.encData)" name="encData" scope="default" type="STRING"/>
+            <!--  <property expression="get-property('registry','conf:/config.xml')" name="freechargeurl" scope="default" type="OM"/>
+            <property expression="concat(get-property('merchantId'),'_key')" name="merchantKeyNode" scope="default" type="STRING"/>
+            <property expression="$ctx:freechargeurl/*[local-name()=get-property('merchantKeyNode')]/text()" name="merchantkey" scope="default" type="STRING"/>-->
+            <class name="com.cholams.pg.freecharge.util.FreechargeDecryptionUtil"/>
+            <property expression="get-property('decData')" name="decrypt_response" scope="default" type="STRING"/>
+            <log level="custom">
+                <property expression="get-property('decrypt_response')" name="PAYLOAD_AFTER_DECRYPTION"/>
+            </log>
+            <payloadFactory media-type="json">
+                <format>
+	$1
+				</format>
+                <args>
+                    <arg evaluator="xml" expression="get-property('decrypt_response')"/>
+                </args>
+            </payloadFactory>
+            <property expression="json-eval($)" name="output_Response_Body" scope="default" type="STRING"/>
+            <respond/>
+        </inSequence>
+        <outSequence/>
+        <faultSequence/>
+    </resource>
+    <resource methods="POST" url-mapping="/signature">
+        <inSequence>
+            <log level="custom">
+                <property name="STEP" value="Incoming Request"/>
+            </log>
+            <!-- Store the COMPLETE incoming JSON -->
+            <property expression="json-eval($)" name="requestbody" scope="default" type="STRING"/>
+            <property expression="json-eval($.merchantId)" name="merchantId" scope="default" type="STRING"/>
+            <!-- Merchant key -->
+            <property expression="get-property('registry','conf:/config.xml')" name="freechargeurl" scope="default" type="OM"/>
+            <property expression="concat(get-property('merchantId'),'_key')" name="merchantKeyNode" scope="default" type="STRING"/>
+            <property expression="$ctx:freechargeurl/*[local-name()=get-property('merchantKeyNode')]/text()" name="merchantkey" scope="default" type="STRING"/>
+            <log level="custom">
+                <property expression="get-property('requestbody')" name="REQUEST_BODY_FOR_SIGNATURE"/>
+            </log>
+            <!-- Generate signature from complete JSON -->
+            <class name="com.cholams.free.checkoutwithouttimestamp"/>
+            <property expression="get-property('signature')" name="signature" scope="default" type="STRING"/>
+            <log level="custom">
+                <property expression="get-property('signature')" name="Generated Signature"/>
+            </log>
+            <!-- Return signature -->
+            <payloadFactory media-type="json">
+                <format>
+                {
+                    "signature":"$1"
+                }
+            </format>
+                <args>
+                    <arg evaluator="xml" expression="get-property('signature')"/>
+                </args>
+            </payloadFactory>
+            <respond/>
+        </inSequence>
+        <outSequence/>
+        <faultSequence>
+            <log level="full">
+                <property expression="get-property('ERROR_CODE')" name="ERROR_CODE"/>
+                <property expression="get-property('ERROR_MESSAGE')" name="ERROR_MESSAGE"/>
+                <property expression="get-property('ERROR_DETAIL')" name="ERROR_DETAIL"/>
+            </log>
+        </faultSequence>
+    </resource>
+</api>
